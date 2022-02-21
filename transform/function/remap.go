@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"github.com/Knetic/govaluate"
 )
 
 const(
@@ -33,7 +34,9 @@ type Rule struct{
 	AcceptDeviation float64 //// mainly for float comparison, if set, a float comparision will be
 							//// considered equal if
 							////  abs(v1 - v2) < v1 * AcceptDeviation
-	Set string /// e.g. price = price * 0.01
+	SetField string /// e.g. price
+	SetEquation string /// e.g. price * 0.01
+	SetType string /// options are float, string
 }
 
 type FunctionMapCfg struct{
@@ -195,12 +198,11 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 			islessthan = true
 		}
 	}
-	ismatched := false
-	if isequal && strings.Contains(rule.RuleType, "="){
+	if isequal && strings.Contains(cmptype, "="){
 		ismatched = true
-	}else if islessthan && strings.Contains(rule.RuleType, "<"){
+	}else if islessthan && strings.Contains(cmptype, "<"){
 		ismatched = true
-	}else if !islessthan && strings.Contains(rule.RuleType, ">"){
+	}else if !islessthan && strings.Contains(cmptype, ">"){
 		ismatched = true
 	}else if rule.RuleType == "!="{
 		ismatched = true
@@ -208,12 +210,107 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 	return ismatched, nil
 }
 
+func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule Rule)([]interface{}, error){
+	/// fieldname
+	///
+	setindex, found := p.fieldindexes[rule.SetField]
+	if !found{
+		return nil, NewInvalidFieldName(rule.SetField)
+	}
+
+	valuate, err := govaluate.NewEvaluableExpression(rule.SetEquation)
+	if err != nil{
+		return nil,NewInvalidExpression(rule.SetEquation, err)
+	}
+	calcval, err := valuate.Eval(p)
+	if err != nil{
+		return nil, NewInvalidExpression(rule.SetEquation, err)
+	}
+	vals[setindex] = calcval
+	return vals, nil
+}
+
+func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interface{}, error){
+	setindex, found := p.fieldindexes[rule.SetField]
+	if !found{
+		return nil, NewInvalidFieldName(rule.SetField)
+	}
+	inquote := false
+	lastchar := rune(' ')
+	fields := strings.FieldsFunc(rule.SetEquation, func(r rune)bool{
+		ret := false
+		if !inquote{
+			if r == '\'' {
+				inquote = true
+				ret = true
+			}
+			if r == ' ' || r == '+'{
+				ret = true
+			}
+		}else{
+			if r == '\''{
+				if lastchar == '\\'{
+					ret = false
+				}
+				inquote = false
+				ret = true
+			}
+		}
+		lastchar = r
+		return ret
+	})
+	strval := ""
+	for _, rawfield := range fields{
+		field := strings.TrimSpace(rawfield)
+		val, found := p.fieldindexes[field]
+		sep := ""
+		if found{
+			 strval += fmt.Sprint(sep, val)
+		}else{
+			strval += sep + rawfield
+		}
+	}
+	vals[setindex] = strval
+	return vals, nil
+}
+
+//// For use by govaluate
+func (p *FunctionRemap) Get(name string) (interface{}, error) {
+	field := strings.TrimSpace(name)
+	val, found := p.fieldindexes[field]
+	if !found {
+		return nil, NewInvalidFieldName(field)
+	}
+	fval, err := toFloat(val)
+	if err != nil {
+		return nil, err
+	}
+	return fval, nil
+}
 
 func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 	for _, rule := range p.rules.FieldToRule{
 		if rule.RuleType == RULETYPE_WHERE{
 			ismatched, err := p.handleWhere(vals, rule)
+			if err != nil{
+				fmt.Println("ERROR: ", err)
+				break
+			}
+			if ismatched && rule.SetType == CMPTYPE_FLOAT{
+				vals, err = p.handleMatchFloat(vals, rule)
+				if err != nil{
+					fmt.Println("ERROR: ", err)
+					break
+				}
+			} else if ismatched && rule.SetType == CMPTYPE_STRING{
+				vals, err = p.handleMatchString(vals, rule)
+				if err != nil{
+					fmt.Println("ERROR: ", err)
+					break
+				}
+			}
 		}
 	}
+	return vals, nil
 }
 

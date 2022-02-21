@@ -66,3 +66,15 @@ func NewInvalidString(val interface{})InvalidString {
 		},
 	}
 }
+type InvalidExpression struct{
+	Invalid
+}
+
+func NewInvalidExpression(expression string, err error)InvalidExpression {
+	details := fmt.Sprint("Invalid expression: ", expression, ": ", err)
+	return InvalidExpression{
+		Invalid{
+			reason: details,
+		},
+	}
+}

@@ -1,2 +1,5 @@
+github.com/Knetic/govaluate v1.5.0 h1:L4MyqdJSld9xr2eZcZHCWLfeIX2SBjqrwIKG1pcm/+4=
+github.com/Knetic/govaluate v3.0.0+incompatible h1:7o6+MAPhYTCF0+fdvoz1xDedhRb4f6s9Tn1Tt7/WTEg=
+github.com/Knetic/govaluate v3.0.0+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/paul-at-nangalan/errorhandler v0.0.0-20210525060727-cba369c8785e h1:7Kbab1yuZKDta7Tu74JDV+4iSttDmDgcieNrdRfdATo=
 github.com/paul-at-nangalan/errorhandler v0.0.0-20210525060727-cba369c8785e/go.mod h1:+GfM6Su5CerpcLIHxjym4LzoLFCKSSQtlCnKYVjqqUM=
