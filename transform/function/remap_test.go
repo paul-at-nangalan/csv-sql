@@ -154,8 +154,18 @@ func Test_ClauseMatchingFloat(t *testing.T){
 
 }
 
-type CalcTests struct{
+func runTestMatchFloat(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+	t *testing.T, expect float64, priceindx int, symbol string){
 
+	var err error
+	rule.SetEquation = first + symbol + second
+	vals, err = remapper.handleMatchFloat(vals, rule)
+	if err != nil{
+		t.Error("Unexpected error ", err)
+	}
+	if expect != vals[priceindx].(float64){
+		t.Error("Calc mismatch, ", expect, " got ", vals[priceindx])
+	}
 }
 
 func Test_HandleMatchFloat(t *testing.T){
@@ -171,9 +181,21 @@ func Test_HandleMatchFloat(t *testing.T){
 		SetField: "price",
 		SetType: CMPTYPE_FLOAT,
 	}
-	testclause := Rule{ }
+	priceindx := findIndex(fields, "price")
 	cases, first, second, firstindx, secondindx := getStdCases(fields)
 
+	for _, tcase := range cases{
+		vals[firstindx] = tcase.first
+		vals[secondindx] = tcase.second
+		expect := tcase.first + tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, "+")
+		expect = tcase.first - tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, " -")
+		expect = tcase.first * tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, " *  ")
+		expect = tcase.first / tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, "   /  ")
+	}
 
 }
 
