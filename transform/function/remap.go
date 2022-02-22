@@ -30,13 +30,17 @@ const(
 type Rule struct{
 	RuleType string /// e.g. where
 	Clause string /// e.g. fieldname = 'GBp'
+					/// price < 1.233
+					/// strings must be quoted with '
+					/// float values must start with a numeric [0-9]
+					/// all other values will be treated as fields
 	ComparisonType string /// options are float, string
 	AcceptDeviation float64 //// mainly for float comparison, if set, a float comparision will be
 							//// considered equal if
 							////  abs(v1 - v2) < v1 * AcceptDeviation
-	SetField string /// e.g. price
-	SetEquation string /// e.g. price * 0.01
-	SetType string /// options are float, string
+	UpdateField   string /// e.g. price
+	UpdateFormula string /// e.g. price * 0.01
+	UpdateType    string /// options are float, string
 }
 
 type FunctionMapCfg struct{
@@ -75,12 +79,13 @@ func (p *FunctionRemap) Setup(cfg transform.TransformerCfg) {
 }
 
 func (p *FunctionRemap)getFieldVal(fieldname string, vals []interface{})(val interface{}, err error){
-
+	//fmt.Println("Looking for field val ", fieldname)
 	cmpindex, exists := p.fieldindexes[fieldname]
 	if !exists{
 		return nil, NewInvalidFieldName(fieldname)
 	}
 	cmpval := vals[cmpindex]
+	//fmt.Println("Found field ", fieldname, " with val ", cmpval)
 	return cmpval, nil
 }
 
@@ -161,9 +166,15 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 	var comparitorval interface{}
 	if !isnumeric && !isstring{
 		///this should be a field name
+		//fmt.Println("Get comparitor field ", comparitorfield)
 		comparitorval, err = p.getFieldVal(comparitorfield, vals)
 		if err != nil{
 			return false, err
+		}
+	}else{
+		comparitorval = comparitorfield
+		if isstring{
+			comparitorval = strings.Trim(comparitorval.(string), "'")
 		}
 	}
 
@@ -171,15 +182,16 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 	islessthan := false
 	switch rule.ComparisonType {
 	case CMPTYPE_FLOAT:
+		//fmt.Println("Compare as float, cmpval: ", cmpval, " comparitor: ", comparitorval)
 		diff, err := p.cmpAsFloats(cmpval, comparitorval)
 		if err != nil {
 			fmt.Println("Float comparision failed for ", rule.Clause, ": ", err)
 			return false, err
 		}
-
+		//fmt.Println("Diff is ", diff)
 		fval, err := toFloat(cmpval)
 		handlers.PanicOnError(err)
-		if math.Abs(diff) < (fval + (fval * rule.AcceptDeviation)){
+		if math.Abs(diff) <= (fval * rule.AcceptDeviation){
 			isequal  = true
 		}
 		if diff < 0{
@@ -198,14 +210,29 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 			islessthan = true
 		}
 	}
-	if isequal && strings.Contains(cmptype, "="){
-		ismatched = true
-	}else if islessthan && strings.Contains(cmptype, "<"){
-		ismatched = true
-	}else if !islessthan && strings.Contains(cmptype, ">"){
-		ismatched = true
-	}else if rule.RuleType == "!="{
-		ismatched = true
+	////Using switch statements to avoid long if statements
+	switch cmptype {
+	case "<=", ">=", "=":
+		if isequal{
+			ismatched = true
+		}
+	case "!=":
+		if !isequal{
+			ismatched = true
+		}
+	}
+
+	switch cmptype {
+	case "<","<=":
+		//// equality is already checked
+		if islessthan{
+			ismatched = true
+		}
+	case ">",">=":
+		//// equality is already checked
+		if !islessthan && !isequal{
+			ismatched = true
+		}
 	}
 	return ismatched, nil
 }
@@ -213,31 +240,37 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule Rule)([]interface{}, error){
 	/// fieldname
 	///
-	setindex, found := p.fieldindexes[rule.SetField]
+	setindex, found := p.fieldindexes[rule.UpdateField]
 	if !found{
-		return nil, NewInvalidFieldName(rule.SetField)
+		return nil, NewInvalidFieldName(rule.UpdateField)
 	}
 
-	valuate, err := govaluate.NewEvaluableExpression(rule.SetEquation)
+	//fmt.Println("Update formula: ", rule.UpdateFormula)
+	valuate, err := govaluate.NewEvaluableExpression(rule.UpdateFormula)
 	if err != nil{
-		return nil,NewInvalidExpression(rule.SetEquation, err)
+		return nil,NewInvalidExpression(rule.UpdateFormula, err)
 	}
-	calcval, err := valuate.Eval(p)
+	paramhandler := &EvalParams{
+		fieldindexes: p.fieldindexes,
+		vals: vals,
+	}
+	calcval, err := valuate.Eval(paramhandler)
 	if err != nil{
-		return nil, NewInvalidExpression(rule.SetEquation, err)
+		return nil, NewInvalidExpression(rule.UpdateFormula, err)
 	}
+	//fmt.Println("Calc value is ", calcval)
 	vals[setindex] = calcval
 	return vals, nil
 }
 
 func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interface{}, error){
-	setindex, found := p.fieldindexes[rule.SetField]
+	setindex, found := p.fieldindexes[rule.UpdateField]
 	if !found{
-		return nil, NewInvalidFieldName(rule.SetField)
+		return nil, NewInvalidFieldName(rule.UpdateField)
 	}
 	inquote := false
 	lastchar := rune(' ')
-	fields := strings.FieldsFunc(rule.SetEquation, func(r rune)bool{
+	fields := strings.FieldsFunc(rule.UpdateFormula, func(r rune)bool{
 		ret := false
 		if !inquote{
 			if r == '\'' {
@@ -262,10 +295,11 @@ func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interf
 	strval := ""
 	for _, rawfield := range fields{
 		field := strings.TrimSpace(rawfield)
-		val, found := p.fieldindexes[field]
+		indx, found := p.fieldindexes[field]
 		sep := ""
 		if found{
-			 strval += fmt.Sprint(sep, val)
+			val := vals[indx]
+			strval += fmt.Sprint(sep, val)
 		}else{
 			strval += sep + rawfield
 		}
@@ -274,17 +308,25 @@ func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interf
 	return vals, nil
 }
 
+type EvalParams struct{
+	vals []interface{}
+	fieldindexes map[string]int
+}
 //// For use by govaluate
-func (p *FunctionRemap) Get(name string) (interface{}, error) {
+func (p *EvalParams) Get(name string) (interface{}, error) {
 	field := strings.TrimSpace(name)
-	val, found := p.fieldindexes[field]
+
+	//fmt.Println("Getting fieldname ", name)
+	indx, found := p.fieldindexes[field]
 	if !found {
 		return nil, NewInvalidFieldName(field)
 	}
+	val := p.vals[indx]
 	fval, err := toFloat(val)
 	if err != nil {
 		return nil, err
 	}
+	//fmt.Println("Got val:", fval)
 	return fval, nil
 }
 
@@ -296,13 +338,13 @@ func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 				fmt.Println("ERROR: ", err)
 				break
 			}
-			if ismatched && rule.SetType == CMPTYPE_FLOAT{
+			if ismatched && rule.UpdateType == CMPTYPE_FLOAT{
 				vals, err = p.handleMatchFloat(vals, rule)
 				if err != nil{
 					fmt.Println("ERROR: ", err)
 					break
 				}
-			} else if ismatched && rule.SetType == CMPTYPE_STRING{
+			} else if ismatched && rule.UpdateType == CMPTYPE_STRING{
 				vals, err = p.handleMatchString(vals, rule)
 				if err != nil{
 					fmt.Println("ERROR: ", err)

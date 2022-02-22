@@ -69,7 +69,7 @@ func runMatchTestFloat(vals []interface{}, tcase TestCase,
 		vals[secondindx] = tcase.second
 		testclause.Clause = first + tcase.ruletype + second
 	}else{
-		testclause.Clause = first + tcase.ruletype + fmt.Sprintf("%d",tcase.second)
+		testclause.Clause = first + tcase.ruletype + fmt.Sprintf("%f",tcase.second)
 	}
 	ismatched, err := remapper.handleWhere(vals, testclause)
 	if err != nil {
@@ -92,7 +92,7 @@ func runMatchTestString(vals []interface{}, tcase TestCase,
 		vals[secondindx] = tcase.secondstr
 		testclause.Clause = first + tcase.ruletype + second
 	}else{
-		testclause.Clause = first + tcase.ruletype + tcase.secondstr
+		testclause.Clause = first + tcase.ruletype + "'" + tcase.secondstr + "'"
 	}
 	ismatched, err := remapper.handleWhere(vals, testclause)
 	if err != nil {
@@ -142,12 +142,16 @@ func Test_ClauseMatchingFloat(t *testing.T){
 	cases, first, second, firstindx, secondindx := getStdCases(fields)
 
 	for _, tcase := range cases {
+		fmt.Println("Test match 1")
 		runMatchTestFloat(vals, tcase, testclause, firstindx, secondindx,
 			first, second, remapper, t)
+		fmt.Println("Test match 2")
 		runMatchTestFloat(vals, tcase, testclause, firstindx, -1,
 			first, second, remapper, t)
+		fmt.Println("Test match 3")
 		runMatchTestString(vals, tcase, testclause, firstindx, secondindx,
 			first, second, remapper, t)
+		fmt.Println("Test match 4")
 		runMatchTestString(vals, tcase, testclause, firstindx, -1,
 			first, second, remapper, t)
 	}
@@ -158,13 +162,27 @@ func runTestMatchFloat(rule Rule, first, second string, vals []interface{}, rema
 	t *testing.T, expect float64, priceindx int, symbol string){
 
 	var err error
-	rule.SetEquation = first + symbol + second
+	rule.UpdateFormula = first + symbol + second
 	vals, err = remapper.handleMatchFloat(vals, rule)
 	if err != nil{
 		t.Error("Unexpected error ", err)
 	}
 	if expect != vals[priceindx].(float64){
-		t.Error("Calc mismatch, ", expect, " got ", vals[priceindx])
+		t.Error("Calc mismatch, ", expect, " got ", vals[priceindx],
+			" calc type ", symbol)
+	}
+}
+func runTestMatchFloatLiteral(rule Rule, first string, second float64, vals []interface{}, remapper *FunctionRemap,
+	t *testing.T, expect float64, priceindx int, symbol string){
+
+	var err error
+	rule.UpdateFormula = first + symbol + fmt.Sprintf("%f", second)
+	vals, err = remapper.handleMatchFloat(vals, rule)
+	if err != nil{
+		t.Error("Unexpected error on literal ", err)
+	}
+	if expect != vals[priceindx].(float64){
+		t.Error("Calc mismatch literal, ", expect, " got ", vals[priceindx])
 	}
 }
 
@@ -178,8 +196,8 @@ func Test_HandleMatchFloat(t *testing.T){
 	remapper.Setup(cfg)
 
 	rule := Rule{
-		SetField: "price",
-		SetType: CMPTYPE_FLOAT,
+		UpdateField: "price",
+		UpdateType:  CMPTYPE_FLOAT,
 	}
 	priceindx := findIndex(fields, "price")
 	cases, first, second, firstindx, secondindx := getStdCases(fields)
@@ -195,7 +213,83 @@ func Test_HandleMatchFloat(t *testing.T){
 		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, " *  ")
 		expect = tcase.first / tcase.second
 		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, "   /  ")
+		expect = tcase.first + tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, "+")
+		expect = tcase.first - tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, " -")
+		expect = tcase.first * tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, " *  ")
+		expect = tcase.first / tcase.second
+		runTestMatchFloat(rule, first, second, vals, remapper, t, expect, priceindx, "   /  ")
+
+		expect = tcase.first + tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, "+")
+		expect = tcase.first - tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, " -")
+		expect = tcase.first * tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, " *  ")
+		expect = tcase.first / tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, "   /  ")
+		expect = tcase.first + tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, "+")
+		expect = tcase.first - tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, " -")
+		expect = tcase.first * tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, " *  ")
+		expect = tcase.first / tcase.second
+		runTestMatchFloatLiteral(rule, first, tcase.second, vals, remapper, t, expect, priceindx, "   /  ")
 	}
 
 }
 
+func runTestMatchString(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+	t *testing.T, expect string, indx int, symbol string){
+
+	var err error
+	rule.UpdateFormula = first + symbol + second
+	vals, err = remapper.handleMatchString(vals, rule)
+	if err != nil{
+		t.Error("Unexpected error ", err)
+	}
+	if expect != vals[indx].(string){
+		t.Error("Calc mismatch, ", expect, " got ", vals[indx],
+			" calc type ", symbol)
+	}
+}
+func runTestMatchStringLiteral(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+	t *testing.T, expect string, indx int, symbol string){
+
+	var err error
+	rule.UpdateFormula = first + symbol + "'" + second + "'"
+	vals, err = remapper.handleMatchString(vals, rule)
+	if err != nil{
+		t.Error("Unexpected error on literal ", err)
+	}
+	if expect != vals[indx].(string){
+		t.Error("Calc mismatch literal, ", expect, " got ", vals[indx])
+	}
+}
+func Test_HandleMatchString(t *testing.T) {
+
+	vals, fields := getStdTestFields()
+	remapper := newFunctionRemap()
+	cfg := transform.TransformerCfg{
+		Fields: fields,
+	}
+	remapper.Setup(cfg)
+
+	rule := Rule{
+		UpdateField: "fruit",
+		UpdateType:  CMPTYPE_STRING,
+	}
+	fruitindx := findIndex(fields, "fruit")
+	cases, first, second, firstindx, secondindx := getStdCases(fields)
+
+	for _, tcase := range cases{
+		vals[firstindx] = tcase.firststr
+		vals[secondindx] = tcase.secondstr
+		expect := tcase.firststr + tcase.secondstr
+		runTestMatchString(rule, first, second, vals, remapper, t, expect, fruitindx, "+")
+		runTestMatchStringLiteral(rule, first, tcase.secondstr, vals, remapper, t, expect, fruitindx, "+")
+	}
+}
