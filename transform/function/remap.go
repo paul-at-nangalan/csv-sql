@@ -3,13 +3,14 @@ package function
 import (
 	"csv-sql/transform"
 	"fmt"
+	"github.com/Knetic/govaluate"
+	"github.com/paul-at-nangalan/csv-stuff/data"
 	"github.com/paul-at-nangalan/errorhandler/handlers"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
-	"github.com/Knetic/govaluate"
 )
 
 const(
@@ -24,11 +25,26 @@ const(
 	CMPTYPE_E = "="
 	CMPTYPE_NE = "!="
 )
-////rules:
-	/// where col = value  set col = newvalue
-	/// e.g. price: "where fieldname = `GBp` set price = price * 0.01
+/** rules:
+	 where col = value  set col = newvalue
+	 e.g. price: "where fieldname = `GBp` set price = price * 0.01
+
+	RuleType: e.g. where
+	Clause e.g. fieldname = 'GBp'
+				/// price < 1.233
+				/// strings must be quoted with '
+				/// float values must start with a numeric [0-9]
+				/// all other values will be treated as fields
+	ComparisonType: float or string
+	AcceptDeviation: mainly for float comparison, if set, a float comparision will be
+						//// considered equal if
+						////  abs(v1 - v2) < v1 * AcceptDeviation
+	UpdateField: The field name to be updated if the clause is true
+	UpdateFormula: e.g. price * 0.01, where price is a field name
+	UpdateType: string or float
+ */
 type Rule struct{
-	RuleType string /// e.g. where
+	RuleType string /** e.g. where */
 	Clause string /// e.g. fieldname = 'GBp'
 					/// price < 1.233
 					/// strings must be quoted with '
@@ -72,7 +88,7 @@ func NewFunctionRemap(cfg FunctionMapCfg)transform.Transformer{
 	}
 }
 
-func (p *FunctionRemap) Setup(cfg transform.TransformerCfg) {
+func (p *FunctionRemap) Setup(cfg *transform.TransformerCfg) {
 	for i, field := range cfg.Fields{
 		p.fieldindexes[field] = i
 	}
@@ -80,13 +96,8 @@ func (p *FunctionRemap) Setup(cfg transform.TransformerCfg) {
 
 func (p *FunctionRemap)getFieldVal(fieldname string, vals []interface{})(val interface{}, err error){
 	//fmt.Println("Looking for field val ", fieldname)
-	cmpindex, exists := p.fieldindexes[fieldname]
-	if !exists{
-		return nil, NewInvalidFieldName(fieldname)
-	}
-	cmpval := vals[cmpindex]
-	//fmt.Println("Found field ", fieldname, " with val ", cmpval)
-	return cmpval, nil
+	datarow := data.NewDataRow(vals, p.fieldindexes)
+	return datarow.Get(fieldname)
 }
 
 func toFloat(v interface{})(float64, error){
@@ -251,8 +262,7 @@ func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule Rule)([]interfa
 		return nil,NewInvalidExpression(rule.UpdateFormula, err)
 	}
 	paramhandler := &EvalParams{
-		fieldindexes: p.fieldindexes,
-		vals: vals,
+		datarow: data.NewDataRow(vals, p.fieldindexes),
 	}
 	calcval, err := valuate.Eval(paramhandler)
 	if err != nil{
@@ -309,19 +319,16 @@ func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interf
 }
 
 type EvalParams struct{
-	vals []interface{}
-	fieldindexes map[string]int
+	datarow *data.DataRow
 }
 //// For use by govaluate
 func (p *EvalParams) Get(name string) (interface{}, error) {
 	field := strings.TrimSpace(name)
 
-	//fmt.Println("Getting fieldname ", name)
-	indx, found := p.fieldindexes[field]
-	if !found {
-		return nil, NewInvalidFieldName(field)
+	val, err := p.datarow.Get(field)
+	if err != nil{
+		return nil, err
 	}
-	val := p.vals[indx]
 	fval, err := toFloat(val)
 	if err != nil {
 		return nil, err

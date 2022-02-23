@@ -136,7 +136,7 @@ func Test_ClauseMatchingFloat(t *testing.T){
 	cfg := transform.TransformerCfg{
 		Fields: fields,
 	}
-	remapper.Setup(cfg)
+	remapper.Setup(&cfg)
 
 	testclause := Rule{ }
 	cases, first, second, firstindx, secondindx := getStdCases(fields)
@@ -193,7 +193,7 @@ func Test_HandleMatchFloat(t *testing.T){
 	cfg := transform.TransformerCfg{
 		Fields: fields,
 	}
-	remapper.Setup(cfg)
+	remapper.Setup(&cfg)
 
 	rule := Rule{
 		UpdateField: "price",
@@ -276,7 +276,7 @@ func Test_HandleMatchString(t *testing.T) {
 	cfg := transform.TransformerCfg{
 		Fields: fields,
 	}
-	remapper.Setup(cfg)
+	remapper.Setup(&cfg)
 
 	rule := Rule{
 		UpdateField: "fruit",
