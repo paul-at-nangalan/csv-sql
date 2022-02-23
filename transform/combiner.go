@@ -5,36 +5,9 @@ import (
 	"csv-sql/transform/datetime"
 	"csv-sql/transform/function"
 	"csv-sql/transform/rename"
+	"csv-sql/transform/shared"
 	"github.com/paul-at-nangalan/json-config/cfg"
 )
-
-type HeaderTransforms struct{
-	AddCols addcol.CfgAddColumn
-	RenameCols rename.RemapCfg
-}
-
-type DataTransforms struct{
-	AddData addcol.CfgAddColumn
-	RenameData rename.RemapCfg
-	DatetimeData datetime.Config
-	FunctionData function.FunctionMapCfg
-}
-
-type TransformerCfg struct{
-	///Original col names from csv
-	Fields []string
-
-	Headers HeaderTransforms
-	Data DataTransforms
-}
-
-func (p *TransformerCfg) Expand() {
-}
-
-type Transformer interface {
-	Setup(cfg *TransformerCfg)
-	Do([]interface{})([]interface{}, error)
-}
 
 /**
 	In this version we add cols and rename cols as the first steps
@@ -44,16 +17,16 @@ type Transformer interface {
 	DoHeaders must be called at least once before DoData
  */
 type Combiner struct{
-	transformers []Transformer
-	headers []Transformer
+	transformers []shared.Transformer
+	headers []shared.Transformer
 
-	txconf *TransformerCfg
+	txconf *shared.TransformerCfg
 }
 
-func NewCombinerWithConfig(txconf *TransformerCfg)*Combiner{
+func NewCombinerWithConfig(txconf *shared.TransformerCfg)*Combiner{
 	combiner := &Combiner{
-		transformers: make([]Transformer, 0),
-		headers: make([]Transformer, 0),
+		transformers: make([]shared.Transformer, 0),
+		headers: make([]shared.Transformer, 0),
 	}
 
 	combiner.txconf = txconf
@@ -71,7 +44,7 @@ func NewCombinerWithConfig(txconf *TransformerCfg)*Combiner{
 	return combiner
 }
 func NewCombiner()*Combiner{
-	txconf := &TransformerCfg{}
+	txconf := &shared.TransformerCfg{}
 	cfg.Read("transforms", txconf)
 	return NewCombinerWithConfig(txconf)
 }
@@ -108,6 +81,6 @@ func (p *Combiner)DoData(vals []interface{})([]interface{}, error){
 	return vals, nil
 }
 
-func (p *Combiner)add(tx Transformer){
+func (p *Combiner)add(tx shared.Transformer){
 	p.transformers = append(p.transformers, tx)
 }

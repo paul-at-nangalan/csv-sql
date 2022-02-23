@@ -1,17 +1,14 @@
 package rename
 
 import (
-	"csv-sql/transform"
-	"errors"
+	"csv-sql/transform/shared"
 )
 
-type RemapCfg map[string]string
-
 type RemapTransform struct{
-	remapping RemapCfg
+	remapping shared.RemapCfg
 }
 
-func (p *RemapTransform) Setup(cfg *transform.TransformerCfg) {
+func (p *RemapTransform) Setup(cfg *shared.TransformerCfg) {
 }
 
 func (p *RemapTransform) Do(vals []interface{}) ([]interface{}, error) {
@@ -22,14 +19,12 @@ func (p *RemapTransform) Do(vals []interface{}) ([]interface{}, error) {
 			if found{
 				vals[i] = newval
 			}
-		default:
-			return nil, errors.New("Only support rename strings currently")
 		}
 	}
 	return vals, nil
 }
 
-func NewRemapping(remapping RemapCfg)transform.Transformer{
+func NewRemapping(remapping shared.RemapCfg)shared.Transformer{
 	return &RemapTransform{
 		remapping: remapping,
 	}

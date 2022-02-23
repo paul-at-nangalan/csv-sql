@@ -1,7 +1,7 @@
 package function
 
 import (
-	"csv-sql/transform"
+	"csv-sql/transform/shared"
 	"fmt"
 	"log"
 	"regexp"
@@ -59,7 +59,7 @@ type TestCase struct{
 }
 
 func runMatchTestFloat(vals []interface{}, tcase TestCase,
-	testclause Rule, firstindx, secondindx int, first, second string,
+	testclause shared.Rule, firstindx, secondindx int, first, second string,
 		remapper *FunctionRemap, t *testing.T){
 
 	vals[firstindx] = tcase.first
@@ -82,7 +82,7 @@ func runMatchTestFloat(vals []interface{}, tcase TestCase,
 }
 
 func runMatchTestString(vals []interface{}, tcase TestCase,
-	testclause Rule, firstindx, secondindx int, first, second string,
+	testclause shared.Rule, firstindx, secondindx int, first, second string,
 	remapper *FunctionRemap, t *testing.T){
 
 	vals[firstindx] = tcase.firststr
@@ -133,12 +133,12 @@ func getStdCases(fields []string)(cases []TestCase, first, second string, firsti
 func Test_ClauseMatchingFloat(t *testing.T){
 	vals, fields := getStdTestFields()
 	remapper := newFunctionRemap()
-	cfg := transform.TransformerCfg{
+	cfg := shared.TransformerCfg{
 		Fields: fields,
 	}
 	remapper.Setup(&cfg)
 
-	testclause := Rule{ }
+	testclause := shared.Rule{ }
 	cases, first, second, firstindx, secondindx := getStdCases(fields)
 
 	for _, tcase := range cases {
@@ -158,7 +158,7 @@ func Test_ClauseMatchingFloat(t *testing.T){
 
 }
 
-func runTestMatchFloat(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+func runTestMatchFloat(rule shared.Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
 	t *testing.T, expect float64, priceindx int, symbol string){
 
 	var err error
@@ -172,7 +172,7 @@ func runTestMatchFloat(rule Rule, first, second string, vals []interface{}, rema
 			" calc type ", symbol)
 	}
 }
-func runTestMatchFloatLiteral(rule Rule, first string, second float64, vals []interface{}, remapper *FunctionRemap,
+func runTestMatchFloatLiteral(rule shared.Rule, first string, second float64, vals []interface{}, remapper *FunctionRemap,
 	t *testing.T, expect float64, priceindx int, symbol string){
 
 	var err error
@@ -190,12 +190,12 @@ func Test_HandleMatchFloat(t *testing.T){
 
 	vals, fields := getStdTestFields()
 	remapper := newFunctionRemap()
-	cfg := transform.TransformerCfg{
+	cfg := shared.TransformerCfg{
 		Fields: fields,
 	}
 	remapper.Setup(&cfg)
 
-	rule := Rule{
+	rule := shared.Rule{
 		UpdateField: "price",
 		UpdateType:  CMPTYPE_FLOAT,
 	}
@@ -242,7 +242,7 @@ func Test_HandleMatchFloat(t *testing.T){
 
 }
 
-func runTestMatchString(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+func runTestMatchString(rule shared.Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
 	t *testing.T, expect string, indx int, symbol string){
 
 	var err error
@@ -256,7 +256,7 @@ func runTestMatchString(rule Rule, first, second string, vals []interface{}, rem
 			" calc type ", symbol)
 	}
 }
-func runTestMatchStringLiteral(rule Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
+func runTestMatchStringLiteral(rule shared.Rule, first, second string, vals []interface{}, remapper *FunctionRemap,
 	t *testing.T, expect string, indx int, symbol string){
 
 	var err error
@@ -273,12 +273,12 @@ func Test_HandleMatchString(t *testing.T) {
 
 	vals, fields := getStdTestFields()
 	remapper := newFunctionRemap()
-	cfg := transform.TransformerCfg{
+	cfg := shared.TransformerCfg{
 		Fields: fields,
 	}
 	remapper.Setup(&cfg)
 
-	rule := Rule{
+	rule := shared.Rule{
 		UpdateField: "fruit",
 		UpdateType:  CMPTYPE_STRING,
 	}

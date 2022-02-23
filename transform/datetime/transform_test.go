@@ -1,7 +1,7 @@
 package datetime
 
 import (
-	"csv-sql/transform"
+	"csv-sql/transform/shared"
 	"fmt"
 	"testing"
 )
@@ -13,13 +13,13 @@ func Test_DatetimeTransform(t *testing.T){
 	vals := []interface{}{
 		"orange", 2.34, "18/9/2020", "orange",
 	}
-	cfg := Config{
-		Mapping: []DatetimeCfg{
+	cfg := shared.Config{
+		Mapping: []shared.DatetimeCfg{
 			{Fieldname: "date", From: "2/1/2006", To: "2006-01-02"},
 		},
 	}
 	datetimemap := NewDatetimeTransform(cfg)
-	txcfg := transform.TransformerCfg{
+	txcfg := shared.TransformerCfg{
 		Fields: fields,
 	}
 	datetimemap.Setup(&txcfg)

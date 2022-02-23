@@ -1,7 +1,7 @@
 package function
 
 import (
-	"csv-sql/transform"
+	"csv-sql/transform/shared"
 	"fmt"
 	"github.com/Knetic/govaluate"
 	"github.com/paul-at-nangalan/csv-stuff/data"
@@ -25,61 +25,15 @@ const(
 	CMPTYPE_E = "="
 	CMPTYPE_NE = "!="
 )
-/** rules:
-	 where col = value  set col = newvalue
-	 e.g. price: "where fieldname = `GBp` set price = price * 0.01
-
-	RuleType: e.g. where
-	Clause e.g. fieldname = 'GBp'
-				/// price < 1.233
-				/// strings must be quoted with '
-				/// float values must start with a numeric [0-9]
-				/// all other values will be treated as fields
-	ComparisonType: float or string
-	AcceptDeviation: mainly for float comparison, if set, a float comparision will be
-						//// considered equal if
-						////  abs(v1 - v2) < v1 * AcceptDeviation
-	UpdateField: The field name to be updated if the clause is true
-	UpdateFormula: e.g. price * 0.01, where price is a field name
-	UpdateType: string or float
- */
-type Rule struct{
-	RuleType string /** e.g. where */
-	Clause string /// e.g. fieldname = 'GBp'
-					/// price < 1.233
-					/// strings must be quoted with '
-					/// float values must start with a numeric [0-9]
-					/// all other values will be treated as fields
-	ComparisonType string /// options are float, string
-	AcceptDeviation float64 //// mainly for float comparison, if set, a float comparision will be
-							//// considered equal if
-							////  abs(v1 - v2) < v1 * AcceptDeviation
-	UpdateField   string /// e.g. price
-	UpdateFormula string /// e.g. price * 0.01
-	UpdateType    string /// options are float, string
-}
-
-type FunctionMapCfg struct{
-	FieldToRule []Rule ///map Field Name to a rule
-}
-
-func (p *FunctionMapCfg)Expand(){
-	for _, rule := range p.FieldToRule{
-		rule.RuleType = strings.TrimSpace(rule.RuleType)
-		rule.RuleType = strings.ToLower(rule.RuleType)
-		rule.ComparisonType = strings.TrimSpace(rule.ComparisonType)
-		rule.ComparisonType = strings.ToLower(rule.ComparisonType)
-	}
-}
 
 type FunctionRemap struct{
-	rules FunctionMapCfg
+	rules        shared.FunctionMapCfg
 	fieldindexes map[string]int
 
 	matchclause *regexp.Regexp
 }
 
-func NewFunctionRemap(cfg FunctionMapCfg)transform.Transformer{
+func NewFunctionRemap(cfg shared.FunctionMapCfg)shared.Transformer{
 	match := regexp.MustCompile("([a-zA-Z0-9_]*)[\\s]*([=!<>]{1,})[\\s]*(.*)")
 	return &FunctionRemap{
 		rules: cfg,
@@ -88,7 +42,7 @@ func NewFunctionRemap(cfg FunctionMapCfg)transform.Transformer{
 	}
 }
 
-func (p *FunctionRemap) Setup(cfg *transform.TransformerCfg) {
+func (p *FunctionRemap) Setup(cfg *shared.TransformerCfg) {
 	for i, field := range cfg.Fields{
 		p.fieldindexes[field] = i
 	}
@@ -149,7 +103,7 @@ func (p *FunctionRemap)cmpAsString(v1, v2 interface{})(int, error){
 	return diff, nil
 }
 
-func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool, err error){
+func (p *FunctionRemap)handleWhere(vals []interface{}, rule shared.Rule)(ismatched bool, err error){
 	clauseparts := p.matchclause.FindStringSubmatch(rule.Clause)
 	if len(clauseparts) < 3{
 		return false, NewInvalidClause(rule.Clause, "Expected <field name> {=|>|<|>=|<=} {<field name> | value}")
@@ -248,7 +202,7 @@ func (p *FunctionRemap)handleWhere(vals []interface{}, rule Rule)(ismatched bool
 	return ismatched, nil
 }
 
-func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule Rule)([]interface{}, error){
+func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule shared.Rule)([]interface{}, error){
 	/// fieldname
 	///
 	setindex, found := p.fieldindexes[rule.UpdateField]
@@ -273,7 +227,7 @@ func (p *FunctionRemap)handleMatchFloat(vals []interface{}, rule Rule)([]interfa
 	return vals, nil
 }
 
-func (p *FunctionRemap)handleMatchString(vals []interface{}, rule Rule)([]interface{}, error){
+func (p *FunctionRemap)handleMatchString(vals []interface{}, rule shared.Rule)([]interface{}, error){
 	setindex, found := p.fieldindexes[rule.UpdateField]
 	if !found{
 		return nil, NewInvalidFieldName(rule.UpdateField)

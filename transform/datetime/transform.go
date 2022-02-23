@@ -1,37 +1,24 @@
 package datetime
 
 import (
-	"csv-sql/transform"
+	"csv-sql/transform/shared"
 	"github.com/paul-at-nangalan/csv-stuff/data"
 	"time"
 )
 
-type DatetimeCfg struct{
-	From string
-	To string
-	Fieldname string
-}
-
-type Config struct{
-	Mapping []DatetimeCfg
-}
-
-func (p *Config) Expand() {
-}
-
 type DatetimeTransform struct{
 	fieldindexes map[string]int
-	cfg Config
+	cfg          shared.Config
 }
 
-func NewDatetimeTransform(cfg Config)transform.Transformer{
+func NewDatetimeTransform(cfg shared.Config)shared.Transformer{
 	return &DatetimeTransform{
 		cfg: cfg,
 		fieldindexes: make(map[string]int),
 	}
 }
 
-func (p *DatetimeTransform) Setup(cfg *transform.TransformerCfg) {
+func (p *DatetimeTransform) Setup(cfg *shared.TransformerCfg) {
 	for i, field := range cfg.Fields{
 		p.fieldindexes[field] = i
 	}
