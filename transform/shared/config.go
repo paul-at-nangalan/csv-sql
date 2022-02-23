@@ -7,6 +7,7 @@ import (
 type HeaderTransforms struct {
 	AddCols    CfgAddColumn
 	RenameCols RemapCfg
+	Filter FilterCfg
 }
 
 type DataTransforms struct {
@@ -14,6 +15,7 @@ type DataTransforms struct {
 	RenameData   RemapCfg
 	DatetimeData Config
 	FunctionData FunctionMapCfg
+	Filter FilterCfg
 }
 
 type TransformerCfg struct {
@@ -101,3 +103,8 @@ func (p *FunctionMapCfg) Expand() {
 
 type RemapCfg map[string]string
 
+type FilterCfg struct {
+	Filter map[string]bool
+	DefaultFilterIn	bool
+	DefaultFilterOut bool
+}
