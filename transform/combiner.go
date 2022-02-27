@@ -3,6 +3,7 @@ package transform
 import (
 	"csv-sql/transform/addcol"
 	"csv-sql/transform/datetime"
+	filter2 "csv-sql/transform/filter"
 	"csv-sql/transform/function"
 	"csv-sql/transform/rename"
 	"csv-sql/transform/shared"
@@ -32,14 +33,15 @@ func NewCombinerWithConfig(txconf *shared.TransformerCfg)*Combiner{
 	combiner.txconf = txconf
 	renamer := rename.NewRemapping(combiner.txconf.Headers.RenameCols)
 	addcols := addcol.NewAddColumn(combiner.txconf.Headers.AddCols)
-	combiner.headers = append(combiner.headers, renamer, addcols)
+	filter := filter2.NewFilterTransform(combiner.txconf.Data.Filter)
+	combiner.headers = append(combiner.headers, renamer, addcols, filter)
 
 	renamer = rename.NewRemapping(combiner.txconf.Data.RenameData)
 	addcols = addcol.NewAddColumn(combiner.txconf.Data.AddData)
 	function := function.NewFunctionRemap(combiner.txconf.Data.FunctionData)
 	datetime := datetime.NewDatetimeTransform(combiner.txconf.Data.DatetimeData)
 	combiner.transformers = append(combiner.transformers,
-		addcols, function, datetime, renamer)
+		addcols, function, datetime, renamer, filter)
 
 	return combiner
 }
@@ -50,9 +52,9 @@ func NewCombiner()*Combiner{
 }
 
 func (p *Combiner)DoHeader(vals []interface{})([]interface{}, error){
-	for _, headers := range p.headers{
+	for _, header := range p.headers{
 		var err error
-		vals, err = headers.Do(vals)
+		vals, err = header.Do(vals)
 		if err != nil{
 			return nil, err
 		}
@@ -66,7 +68,12 @@ func (p *Combiner)DoHeader(vals []interface{})([]interface{}, error){
 	for _, transformer := range p.transformers{
 		transformer.Setup(p.txconf)
 	}
-
+	////Finally apply the filter to filter in/out only what we want
+	/// The filter must be the last transform
+	vals, err := p.headers[len(p.headers) - 1].Do(vals)
+	if err != nil{
+		return nil, err
+	}
 	return vals, nil
 }
 

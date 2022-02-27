@@ -8,7 +8,7 @@ import (
 func Test_Combiner(t *testing.T){
 
 	header := []interface{}{"ME date", "Sett date", "ME currency", "ME instrument", "ticker", "ME price", "ME factor"}
-	expheader := []string{"time", "settle_date", "currency", "asset", "ticker", "price", "factor", "type", "source"}
+	expheader := []string{"time", "settle_date", "currency", "asset", "price", "factor", "type", "source"}
 	txconf := shared.TransformerCfg{
 		Headers: shared.HeaderTransforms{
 			AddCols: shared.CfgAddColumn{
@@ -53,6 +53,12 @@ func Test_Combiner(t *testing.T){
 					{From: "2/1/2006", To: "2006-01-02", Fieldname: "settle_date"},
 				},
 			},
+			Filter: shared.FilterCfg{
+				DefaultFilterIn: true,
+				Filter: map[string]bool{
+					"ticker": false,
+				},
+			},
 		},
 	}
 
@@ -70,25 +76,25 @@ func Test_Combiner(t *testing.T){
 	vals := []interface{}{
 		"19/2/2022", "19/2/2022", "USD", "BIN", "BIN", 1.233, float64(1)}
 	expect := []interface{}{
-		"2022-02-19", "2022-02-19","USD", "BIN", "BIN", float64(1.233), float64(1), "close", "aib"}
+		"2022-02-19", "2022-02-19","USD", "BIN", float64(1.233), float64(1), "close", "aib"}
 	runDataTest(vals, expect, t, combiner)
 
 	vals = []interface{}{
 		"19/2/2022",  "19/2/2022","GBp", "AKK", "AKK", 1233, float64(100)}
 	expect = []interface{}{
-		"2022-02-19", "2022-02-19","GBp 100", "AKK", "AKK", float64(12.33), float64(100), "close", "aib"}
+		"2022-02-19", "2022-02-19","GBp 100", "AKK", float64(12.33), float64(100), "close", "aib"}
 	runDataTest(vals, expect, t, combiner)
 
 	vals = []interface{}{
 		"19/2/2022",  "19/2/2022","GBp", "AKK", "AKK", 1233, float64(1)}
 	expect = []interface{}{
-		"2022-02-19", "2022-02-19","GBp", "AKK", "AKK", float64(12.33), float64(1), "close", "aib"}
+		"2022-02-19", "2022-02-19","GBp", "AKK", float64(12.33), float64(1), "close", "aib"}
 	runDataTest(vals, expect, t, combiner)
 
 	vals = []interface{}{
 		"19/2/2022",  "19/2/2022","GBP", "AKK", "AKK", 12.33, float64(1)}
 	expect = []interface{}{
-		"2022-02-19", "2022-02-19","GBP", "AKK", "AKK", float64(12.33), float64(1), "close", "aib"}
+		"2022-02-19", "2022-02-19","GBP", "AKK", float64(12.33), float64(1), "close", "aib"}
 	runDataTest(vals, expect, t, combiner)
 }
 

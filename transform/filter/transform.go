@@ -21,6 +21,9 @@ func (p *FilterTransform) Setup(cfg *shared.TransformerCfg) {
 }
 
 func (p *FilterTransform) Do(vals []interface{}) ([]interface{}, error) {
+	if len(p.fields) == 0{
+		return vals, nil
+	}
 	retvals := make([]interface{}, 0, len(vals))
 	for i, val := range vals {
 		filterin, found := p.filter.Filter[p.fields[i]]

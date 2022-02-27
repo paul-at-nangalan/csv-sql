@@ -7,7 +7,6 @@ import (
 type HeaderTransforms struct {
 	AddCols    CfgAddColumn
 	RenameCols RemapCfg
-	Filter FilterCfg
 }
 
 type DataTransforms struct {
