@@ -13,12 +13,20 @@ const(
 	ARGTYPE_NUMBERED ArgType = "$x"
 )
 
+///Do this so we can switch in a write to file DB interface
+type DB interface {
+	Prepare(query string) (*sql.Stmt, error)
+}
+
 type DbWriter struct{
-	db *sql.DB
+	db DB
 	insstmt *sql.Stmt
 }
 
-func NewDBWriter(db *sql.DB, tablename string, colnames []string, argtype ArgType)*DbWriter{
+///onduplicate can be
+// - empty - duplicates should generate an error
+// - a valid ignore statement for the DB type, e.g. ON DUPLICATE DO NOTHING
+func NewDBWriter(db DB, tablename string, colnames []string, argtype ArgType, onduplicate string)*DbWriter{
 	inssql := `INSERT INTO ` + tablename + ` (`
 
 	sep := ""
@@ -36,7 +44,7 @@ func NewDBWriter(db *sql.DB, tablename string, colnames []string, argtype ArgTyp
 		inssql += arg
 		sep = ","
 	}
-	inssql += ")"
+	inssql += ") " + onduplicate
 	insstmt, err := db.Prepare(inssql)
 	handlers.PanicOnError(err)
 

@@ -13,18 +13,22 @@ import (
 )
 
 type Proc struct{
-	db *sql.DB
-	combiner *transform.Combiner
+	db             *sql.DB
+	combinedfilter *transform.Combiner
+	dbargtype writer.ArgType
+	dbonduplicate string
 }
 
-func NewProc(db *sql.DB, combiner *transform.Combiner) *Proc {
+func NewProc(db *sql.DB, combiner *transform.Combiner, dbargtype writer.ArgType, onduplicate string) *Proc {
 	return &Proc{
-		db: db,
-		combiner: combiner,
+		db:             db,
+		combinedfilter: combiner,
+		dbargtype: dbargtype,
+		dbonduplicate: onduplicate,
 	}
 }
 
-func (p *Proc)Process(filename string, cfg list.Config)error{
+func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 	f, err := os.Open(filename)
 	handlers.PanicOnError(err)
 	defer f.Close()
@@ -41,10 +45,29 @@ func (p *Proc)Process(filename string, cfg list.Config)error{
 	for i := 0; i < len(header); i++{
 		header[i] = fields[i].Name()
 	}
-	newheader, err := p.combiner.DoHeader(header)
+	newheader, err := p.combinedfilter.DoHeader(header)
 	if err != nil{
 		fmt.Println("Failed to parse header. Error ", err)
 		return err
 	}
+	colnames := make([]string, len(newheader))
+	for i, colname := range newheader {
+		colnames[i] = colname.(string)
+	}
+
+	dbwriter := writer.NewDBWriter(p.db, tablename, colnames, p.dbargtype, p.dbonduplicate)
+
+	for i := 0; ; i++{
+		rowdata, valid := datastore.GetRow(int64(i))
+		if !valid{
+			break
+		}
+
+		_, err := dbwriter.InsRow(rowdata.GetRow())
+		if err != nil{
+			return err
+		}
+	}
+	return nil
 }
 
