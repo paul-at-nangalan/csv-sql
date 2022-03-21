@@ -62,8 +62,12 @@ func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 		if !valid{
 			break
 		}
-
-		_, err := dbwriter.InsRow(rowdata.GetRow())
+		row, err := p.combinedfilter.DoData(rowdata.GetRow())
+		if err != nil{
+			return err
+		}
+		fmt.Println("Row: ", row)
+		_, err = dbwriter.InsRow(row)
 		if err != nil{
 			return err
 		}

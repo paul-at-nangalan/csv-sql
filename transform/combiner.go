@@ -7,6 +7,8 @@ import (
 	"csv-sql/transform/function"
 	"csv-sql/transform/rename"
 	"csv-sql/transform/shared"
+	"fmt"
+	"github.com/paul-at-nangalan/errorhandler/handlers"
 	"github.com/paul-at-nangalan/json-config/cfg"
 )
 
@@ -47,7 +49,8 @@ func NewCombinerWithConfig(txconf *shared.TransformerCfg)*Combiner{
 }
 func NewCombiner()*Combiner{
 	txconf := &shared.TransformerCfg{}
-	cfg.Read("transforms", txconf)
+	err := cfg.Read("transforms", txconf)
+	handlers.PanicOnError(err)
 	return NewCombinerWithConfig(txconf)
 }
 
@@ -63,6 +66,7 @@ func (p *Combiner)DoHeader(vals []interface{})([]interface{}, error){
 	////Setup the data transforms based on the new headers
 	p.txconf.Fields = make([]string, len(vals))
 	for i, val := range vals {
+		fmt.Println("Setting field ", val.(string))
 		p.txconf.Fields[i] = val.(string)
 	}
 	for _, transformer := range p.transformers{

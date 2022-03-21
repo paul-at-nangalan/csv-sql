@@ -49,7 +49,6 @@ func (p *FunctionRemap) Setup(cfg *shared.TransformerCfg) {
 }
 
 func (p *FunctionRemap)getFieldVal(fieldname string, vals []interface{})(val interface{}, err error){
-	//fmt.Println("Looking for field val ", fieldname)
 	datarow := data.NewDataRow(vals, p.fieldindexes)
 	return datarow.Get(fieldname)
 }
@@ -297,19 +296,19 @@ func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 			ismatched, err := p.handleWhere(vals, rule)
 			if err != nil{
 				fmt.Println("ERROR: ", err)
-				break
+				return nil, err
 			}
 			if ismatched && rule.UpdateType == CMPTYPE_FLOAT{
 				vals, err = p.handleMatchFloat(vals, rule)
 				if err != nil{
 					fmt.Println("ERROR: ", err)
-					break
+					return nil, err
 				}
 			} else if ismatched && rule.UpdateType == CMPTYPE_STRING{
 				vals, err = p.handleMatchString(vals, rule)
 				if err != nil{
 					fmt.Println("ERROR: ", err)
-					break
+					return nil, err
 				}
 			}
 		}

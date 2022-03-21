@@ -39,12 +39,13 @@ func NewDBWriter(db DB, tablename string, colnames []string, argtype ArgType, on
 	for i, _ := range colnames{
 		arg := "?"
 		if argtype == ARGTYPE_NUMBERED{
-			arg = fmt.Sprintf("$%d", i)
+			arg = fmt.Sprintf("$%d", (i + 1))
 		}
-		inssql += arg
+		inssql += sep + arg
 		sep = ","
 	}
 	inssql += ") " + onduplicate
+	fmt.Println("Insert statement: ", inssql)
 	insstmt, err := db.Prepare(inssql)
 	handlers.PanicOnError(err)
 
@@ -55,5 +56,6 @@ func NewDBWriter(db DB, tablename string, colnames []string, argtype ArgType, on
 }
 ////keep it simple for now ... no bulk updates
 func (p *DbWriter)InsRow(vals ...interface{})(sql.Result, error){
-	return p.insstmt.Exec(vals)
+	fmt.Println("Insert vals ", vals)
+	return p.insstmt.Exec(vals...)
 }

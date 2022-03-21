@@ -2,6 +2,7 @@ package rename
 
 import (
 	"csv-sql/transform/shared"
+	"fmt"
 )
 
 type RemapTransform struct{
@@ -18,6 +19,7 @@ func (p *RemapTransform) Do(vals []interface{}) ([]interface{}, error) {
 			newval, found := p.remapping[val.(string)]
 			if found{
 				vals[i] = newval
+				fmt.Println("Rename ", val, " to ", vals[i])
 			}
 		}
 	}
