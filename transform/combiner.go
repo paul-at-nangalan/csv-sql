@@ -2,6 +2,7 @@ package transform
 
 import (
 	"csv-sql/transform/addcol"
+	"csv-sql/transform/cast"
 	"csv-sql/transform/datetime"
 	filter2 "csv-sql/transform/filter"
 	"csv-sql/transform/function"
@@ -42,8 +43,9 @@ func NewCombinerWithConfig(txconf *shared.TransformerCfg)*Combiner{
 	addcols = addcol.NewAddColumn(combiner.txconf.Data.AddData)
 	function := function.NewFunctionRemap(combiner.txconf.Data.FunctionData)
 	datetime := datetime.NewDatetimeTransform(combiner.txconf.Data.DatetimeData)
+	castfunc := cast.NewCast(combiner.txconf.Data.CastData)
 	combiner.transformers = append(combiner.transformers,
-		addcols, function, datetime, renamer, filter)
+		addcols, castfunc, function, datetime, renamer, filter)
 
 	return combiner
 }

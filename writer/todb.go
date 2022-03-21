@@ -56,6 +56,5 @@ func NewDBWriter(db DB, tablename string, colnames []string, argtype ArgType, on
 }
 ////keep it simple for now ... no bulk updates
 func (p *DbWriter)InsRow(vals ...interface{})(sql.Result, error){
-	fmt.Println("Insert vals ", vals)
 	return p.insstmt.Exec(vals...)
 }

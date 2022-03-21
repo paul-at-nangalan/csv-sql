@@ -66,8 +66,8 @@ func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 		if err != nil{
 			return err
 		}
-		fmt.Println("Row: ", row)
-		_, err = dbwriter.InsRow(row)
+		//fmt.Println("Row: ", row)
+		_, err = dbwriter.InsRow(row...)
 		if err != nil{
 			return err
 		}

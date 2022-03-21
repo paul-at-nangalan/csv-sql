@@ -72,7 +72,9 @@ func toFloat(v interface{})(float64, error){
 	case uint:
 		return float64(i), nil
 	case string:
-		return strconv.ParseFloat(i, 64)
+		parsed := strings.TrimSpace(i)
+		parsed = strings.Replace(parsed, ",", "", -1)
+		return strconv.ParseFloat(parsed, 64)
 	}
 	return 0, NewInvalidValue(v)
 }

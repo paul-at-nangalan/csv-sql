@@ -12,6 +12,7 @@ type HeaderTransforms struct {
 type DataTransforms struct {
 	AddData      CfgAddColumn
 	RenameData   RemapCfg
+	CastData CastCfg
 	DatetimeData Config
 	FunctionData FunctionMapCfg
 	Filter FilterCfg
@@ -101,6 +102,7 @@ func (p *FunctionMapCfg) Expand() {
 }
 
 type RemapCfg map[string]string
+type CastCfg map[string]string
 
 type FilterCfg struct {
 	Filter map[string]bool
