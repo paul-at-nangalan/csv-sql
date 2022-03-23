@@ -57,6 +57,8 @@ func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 
 	dbwriter := writer.NewDBWriter(p.db, tablename, colnames, p.dbargtype, p.dbonduplicate)
 
+	bar := ""
+	barstep := ">"
 	for i := 0; ; i++{
 		rowdata, valid := datastore.GetRow(int64(i))
 		if !valid{
@@ -64,8 +66,14 @@ func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 		}
 		row, err := p.combinedfilter.DoData(rowdata.GetRow())
 		if err != nil{
+			fmt.Println("ERROR on row: ", i)
 			return err
 		}
+		bar += barstep
+		if len(bar) > 99{
+			bar = ""
+		}
+		fmt.Printf("\r[%-100s] %d", bar, i)
 		//fmt.Println("Row: ", row)
 		_, err = dbwriter.InsRow(row...)
 		if err != nil{

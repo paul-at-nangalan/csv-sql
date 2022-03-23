@@ -54,6 +54,9 @@ func toFloat(v interface{})(float64, error){
 		return float64(i), nil
 	case string:
 		parsed := strings.TrimSpace(i)
+		if parsed == ""{
+			return 0, nil
+		}
 		parsed = strings.Replace(parsed, ",", "", -1)
 		return strconv.ParseFloat(parsed, 64)
 	}
@@ -63,7 +66,7 @@ func toFloat(v interface{})(float64, error){
 func (p *Cast) Do(vals []interface{}) ([]interface{}, error) {
 	for i, val := range vals{
 		if p.casts[i] == TOFLOAT{
-			fmt.Println("Format ", vals[i], " to ", p.casts[i])
+			//fmt.Println("Format ", vals[i], " to ", p.casts[i])
 			fval, err := toFloat(val)
 			if err != nil{
 				return nil, err
