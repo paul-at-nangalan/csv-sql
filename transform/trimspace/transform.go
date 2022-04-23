@@ -2,6 +2,7 @@ package trimspace
 
 import (
 	"csv-sql/transform/shared"
+	"fmt"
 	"strings"
 )
 
@@ -11,6 +12,10 @@ type TrimSpace struct{
 }
 
 func NewTrimspaceTransform(cfg shared.TrimSpaceCfg) *TrimSpace {
+	fmt.Println("Trim space for ")
+	for field, val := range cfg.Fields{
+		fmt.Println(field, "[", val, "]")
+	}
 	return &TrimSpace{config: cfg}
 }
 

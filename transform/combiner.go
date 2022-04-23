@@ -8,6 +8,7 @@ import (
 	"csv-sql/transform/function"
 	"csv-sql/transform/rename"
 	"csv-sql/transform/shared"
+	"csv-sql/transform/trimspace"
 	"fmt"
 	"github.com/paul-at-nangalan/errorhandler/handlers"
 	"github.com/paul-at-nangalan/json-config/cfg"
@@ -39,13 +40,14 @@ func NewCombinerWithConfig(txconf *shared.TransformerCfg)*Combiner{
 	filter := filter2.NewFilterTransform(combiner.txconf.Data.Filter)
 	combiner.headers = append(combiner.headers, renamer, addcols, filter)
 
+	trimspacetx := trimspace.NewTrimspaceTransform(combiner.txconf.Data.TrimSpace)
 	renamer = rename.NewRemapping(combiner.txconf.Data.RenameData)
 	addcols = addcol.NewAddColumn(combiner.txconf.Data.AddData)
 	function := function.NewFunctionRemap(combiner.txconf.Data.FunctionData)
 	datetime := datetime.NewDatetimeTransform(combiner.txconf.Data.DatetimeData)
 	castfunc := cast.NewCast(combiner.txconf.Data.CastData)
 	combiner.transformers = append(combiner.transformers,
-		addcols, castfunc, function, datetime, renamer, filter)
+		trimspacetx, addcols, castfunc, function, datetime, renamer, filter)
 
 	return combiner
 }
