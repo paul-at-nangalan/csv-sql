@@ -16,6 +16,11 @@ type DataTransforms struct {
 	DatetimeData Config
 	FunctionData FunctionMapCfg
 	Filter FilterCfg
+	TrimSpace TrimSpaceCfg
+}
+
+type TrimSpaceCfg struct{
+	Fields map[string]bool
 }
 
 type TransformerCfg struct {
