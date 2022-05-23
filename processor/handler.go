@@ -34,6 +34,7 @@ func (p *Proc)Process(filename string, cfg list.Config, tablename string)error{
 	defer f.Close()
 
 	csvreader := csv.NewReader(f)
+	csvreader.FieldsPerRecord = -1 /// Don't check number of records per line
 	importer := list.NewCsvImporter(cfg, csvreader)
 
 	datastore := data.NewMemStore()
