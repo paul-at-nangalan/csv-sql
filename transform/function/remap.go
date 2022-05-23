@@ -7,6 +7,7 @@ import (
 	"github.com/paul-at-nangalan/csv-stuff/data"
 	"github.com/paul-at-nangalan/errorhandler/handlers"
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,6 +18,9 @@ const(
 	RULETYPE_WHERE = "where"
 	CMPTYPE_FLOAT = "float"
 	CMPTYPE_STRING = "string"
+
+	RULETYPE_FUNC = "func"
+	FUNCTYPE_EXPENV = "expand-env"
 
 	CMPTYPE_L = "<"
 	CMPTYPE_G = ">"
@@ -292,9 +296,20 @@ func (p *EvalParams) Get(name string) (interface{}, error) {
 	return fval, nil
 }
 
+func (p *FunctionRemap)expandEnv(vals []interface{})([]interface{}, error){
+	for i, val := range vals{
+		switch val.(type) {
+		case string:
+			vals[i] = os.ExpandEnv(val.(string))
+		}
+	}
+	return vals, nil
+}
+
 func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 	for _, rule := range p.rules.FieldToRule{
-		if rule.RuleType == RULETYPE_WHERE{
+		switch rule.RuleType{
+		case RULETYPE_WHERE:
 			ismatched, err := p.handleWhere(vals, rule)
 			if err != nil{
 				fmt.Println("ERROR: ", err)
@@ -313,6 +328,21 @@ func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 					return nil, err
 				}
 			}
+		case RULETYPE_FUNC:
+			var err error
+			switch rule.UpdateFormula{
+
+			case FUNCTYPE_EXPENV:
+				vals, err = p.expandEnv(vals)
+				if err != nil{
+					fmt.Println("ERROR: ", err)
+					return nil, err
+				}
+			default:
+				return nil, NewInvalidRule("UpdateFormula", rule.UpdateFormula)
+			}
+		default:
+			return nil, NewInvalidRule("Ruletype", rule.RuleType)
 		}
 	}
 	return vals, nil

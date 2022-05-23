@@ -4,6 +4,7 @@ import (
 	"csv-sql/transform/shared"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"testing"
 )
@@ -291,5 +292,41 @@ func Test_HandleMatchString(t *testing.T) {
 		expect := tcase.firststr + tcase.secondstr
 		runTestMatchString(rule, first, second, vals, remapper, t, expect, fruitindx, "+")
 		runTestMatchStringLiteral(rule, first, tcase.secondstr, vals, remapper, t, expect, fruitindx, "+")
+	}
+}
+
+func Test_EnvExp(t *testing.T){
+	vals := []interface{}{
+		"${ACTUAL_DOLLAR}NOTHING", "something", "$DATE", 7.34, "$COLOUR",
+	}
+	expect := []interface{}{
+		"$NOTHING", "something", "2022-05-01", 7.34, "green",
+	}
+	fields := []string{
+		"one", "two", "date", "price", "colour",
+	}
+	rule := shared.Rule{
+		RuleType: RULETYPE_FUNC,
+		UpdateFormula: FUNCTYPE_EXPENV,
+	}
+	funcmap := shared.FunctionMapCfg{
+		FieldToRule: []shared.Rule{rule},
+	}
+	remapper := NewFunctionRemap(funcmap)
+	cfg := shared.TransformerCfg{
+		Fields: fields,
+	}
+	remapper.Setup(&cfg)
+	os.Setenv("ACTUAL_DOLLAR", "$")
+	os.Setenv("DATE", "2022-05-01")
+	os.Setenv("COLOUR", "green")
+	vals, err := remapper.Do(vals)
+	if err != nil{
+		t.Error("Unexpected error ", err)
+	}
+	for i, val := range vals{
+		if val != expect[i]{
+			t.Error("Mismatch value ", val, " vs ", expect[i])
+		}
 	}
 }

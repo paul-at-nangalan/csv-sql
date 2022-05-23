@@ -78,3 +78,16 @@ func NewInvalidExpression(expression string, err error)InvalidExpression {
 		},
 	}
 }
+
+type InvalidRule struct{
+	Invalid
+}
+
+func NewInvalidRule(param, value string)InvalidRule{
+	details := fmt.Sprint("Invalid rule args, param ", param, " invalid value ", value)
+	return InvalidRule{
+		Invalid{
+			reason: details,
+		},
+	}
+}
