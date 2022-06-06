@@ -59,6 +59,8 @@ func toFloat(v interface{})(float64, error){
 		}
 		parsed = strings.Replace(parsed, ",", "", -1)
 		return strconv.ParseFloat(parsed, 64)
+	case nil:
+		return 0, nil
 	}
 	return 0, errors.New(fmt.Sprint("Failed to convert", v, " to float"))
 }

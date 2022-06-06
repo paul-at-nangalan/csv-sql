@@ -31,6 +31,10 @@ func (p *DatetimeTransform) Do(vals []interface{}) ([]interface{}, error) {
 		if err != nil{
 			return nil, err
 		}
+		if val == "" && tx.AllowNil{
+			datarow.Set(tx.Fieldname, nil)
+			continue
+		}
 		t, err := time.Parse(tx.From, val.(string))
 		if err != nil{
 			return nil, err

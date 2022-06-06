@@ -50,6 +50,7 @@ type DatetimeCfg struct {
 	From      string
 	To        string
 	Fieldname string
+	AllowNil bool
 }
 
 type Config struct {
