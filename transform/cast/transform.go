@@ -11,6 +11,8 @@ import (
 const(
 	TOFLOAT = "float"
 	TOINT = "int"
+	TOFLOATZERO = "float_or_zero"
+	TOINTZERO = "int_or_zero"
 )
 
 type Cast struct{
@@ -112,6 +114,13 @@ func (p *Cast) Do(vals []interface{}) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
+			vals[i] = fval
+		case TOFLOATZERO:
+			//fmt.Println("Format ", vals[i], " to ", p.casts[i])
+			fval, _ := toFloat(val)
+			vals[i] = fval
+		case TOINTZERO:
+			fval, _ := toInt(val)
 			vals[i] = fval
 		}
 	}
