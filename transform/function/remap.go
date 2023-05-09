@@ -306,6 +306,7 @@ func (p *FunctionRemap)expandEnv(vals []interface{})([]interface{}, error){
 	return vals, nil
 }
 
+
 func (p *FunctionRemap) Do(vals []interface{}) ([]interface{}, error) {
 	for _, rule := range p.rules.FieldToRule{
 		switch rule.RuleType{

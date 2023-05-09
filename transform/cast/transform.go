@@ -60,8 +60,18 @@ func toFloat(v interface{})(float64, error){
 		if parsed == ""{
 			return 0, nil
 		}
+		factor := float64(1)
+		if strings.HasSuffix(parsed, "%") {
+			factor = 0.01
+			parsed = strings.Replace(parsed, "%", "", -1)
+
+		}
 		parsed = strings.Replace(parsed, ",", "", -1)
-		return strconv.ParseFloat(parsed, 64)
+		f, err := strconv.ParseFloat(parsed, 64)
+		if err != nil{
+			return 0, err
+		}
+		return f * factor, nil
 	case nil:
 		return 0, nil
 	}

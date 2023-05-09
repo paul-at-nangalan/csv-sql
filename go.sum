@@ -42,6 +42,8 @@ github.com/paul-at-nangalan/csv-stuff v0.0.0-20220323151926-3e6e697a6d9f h1:mV5S
 github.com/paul-at-nangalan/csv-stuff v0.0.0-20220323151926-3e6e697a6d9f/go.mod h1:dX+WFuTPmRY4MHC5b3t/lbgnfJufkIGO+CkeWJpMqAw=
 github.com/paul-at-nangalan/csv-stuff v0.0.0-20220323155859-365f141f48fa h1:ZrD1k9GhaQBXbN6RceV0XyQfCzrgUDIlcGcTaEYSzAw=
 github.com/paul-at-nangalan/csv-stuff v0.0.0-20220323155859-365f141f48fa/go.mod h1:dX+WFuTPmRY4MHC5b3t/lbgnfJufkIGO+CkeWJpMqAw=
+github.com/paul-at-nangalan/csv-stuff v0.0.0-20220930102255-d4d703418713 h1:GtlJ/CsV9Leh83C2zgMw3hA4D4s0wq9IODTQLXWVasY=
+github.com/paul-at-nangalan/csv-stuff v0.0.0-20220930102255-d4d703418713/go.mod h1:dX+WFuTPmRY4MHC5b3t/lbgnfJufkIGO+CkeWJpMqAw=
 github.com/paul-at-nangalan/db-util v0.0.0-20211015082647-2da9ffa9ef4e h1:N5R7iIFYrR6eewscDCFXnbiAdbfwnuuzd3qFWt+MOoE=
 github.com/paul-at-nangalan/db-util v0.0.0-20220309210524-c4cc8d35616a h1:lSgNUnICraqu37qBlKqlUFm1LAO7xptGfh8Wj/iWKWA=
 github.com/paul-at-nangalan/db-util v0.0.0-20220309210524-c4cc8d35616a/go.mod h1:CWtKiOpQNSAhH5Adnp+OLV2u4kHsZjo/4F8w7Ds23s0=
